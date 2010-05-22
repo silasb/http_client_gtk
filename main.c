@@ -4,6 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct
+{
+  GtkWidget *window;
+  GtkWidget *urlBarField;
+  GtkWidget *responseField;
+} Window;
+
 struct MemoryStruct {
   char *memory;
   size_t size;
@@ -36,12 +43,6 @@ WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data)
   return realsize;
 }
 
-typedef struct
-{
-  GtkWidget *window;
-  GtkWidget *responseField;
-} Window;
-
 void
 on_window1_destroy(GtkObject *object, gpointer user_data)
 {
@@ -54,6 +55,7 @@ on_SendButton_clicked(GtkObject *object, Window *window)
   CURL *curl;
   CURLcode res;
   GtkTextBuffer *buffer;
+  const gchar *url;
 
   struct MemoryStruct chunk;
 
@@ -65,7 +67,8 @@ on_SendButton_clicked(GtkObject *object, Window *window)
   curl = curl_easy_init();
 
   if(curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:3000");
+    url = gtk_entry_get_text(GTK_ENTRY(window->urlBarField));
+    curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
 
@@ -80,7 +83,6 @@ on_SendButton_clicked(GtkObject *object, Window *window)
     if(chunk.memory)
       free(chunk.memory);
   }
-  printf("Got button click\n");
 
   curl_global_cleanup();
 }
@@ -100,6 +102,7 @@ main(int argc, char *argv[])
   gtk_builder_add_from_file(builder, "http_client_gtk.glade", NULL);
 
   window->window = GTK_WIDGET(gtk_builder_get_object(builder, "window1"));
+  window->urlBarField = GTK_WIDGET(gtk_builder_get_object(builder, "URLBarField"));
   window->responseField = GTK_WIDGET(gtk_builder_get_object(builder, "ResponseField"));
 
   gtk_builder_connect_signals(builder, window);
